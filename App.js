@@ -1,23 +1,61 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AppLoading, Asset, Font } from 'expo';
+import { View, Text, Image } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 
-export default class App extends React.Component {
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text>Open up App.js to start working on your app!</Text>
-        <Text>Changes you make will automatically reload.</Text>
-        <Text>Shake your phone to open the developer menu.</Text>
-      </View>
-    );
-  }
+function cacheImages(images) {
+	return images.map(image => {
+		if (typeof image === 'string') {
+			return Image.prefetch(image);
+		} else {
+			return Asset.fromModule(image).downloadAsync();
+		}
+	});
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+function cacheFonts(fonts) {
+	return fonts.map(font => Font.loadAsync(font));
+}
+
+export default class AppContainer extends React.Component {
+	state = {
+		isReady: false,
+	};
+
+	async _loadAssetsAsync() {
+		const imageAssets = cacheImages([
+			'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png',
+			'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png',
+		]);
+
+		const fontAssets = cacheFonts([FontAwesome.font]);
+
+		await Promise.all([...imageAssets, ...fontAssets]);
+	}
+
+	render() {
+		console.log(this.state.isReady)
+		if (!this.state.isReady) {
+			return (
+				<AppLoading
+					startAsync={this._loadAssetsAsync}
+					onFinish={() => this.setState({ isReady: true })}
+					onError={console.warn}
+				/>
+			);
+		}
+
+		return (
+			<View>
+				<Text>Hello world, this is my app.</Text>
+				<Image
+					style={{
+						width: 272,
+						height: 92
+					}}
+					source={{uri: 'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png'}}
+				/>
+			</View>
+		);
+	}
+}
